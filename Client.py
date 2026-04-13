@@ -322,10 +322,12 @@ else:
             "Qirmizi"
         ]
 
-        # keep only existing columns safely
         base = base[[c for c in ordered_cols if c in base.columns]]
         base = base.set_index("Kod")         
-        st.table(format_as_int_table(base))
 
         kateqoriya_satis = kateqoriya(selected_kod).set_index("MikroID")
-        st.table(format_as_int_table(kateqoriya_satis))
+        
+
+        with st.spinner("Müştərilər yüklənir..."):
+            st.table(format_as_int_table(base))
+            st.table(format_as_int_table(kateqoriya_satis))
