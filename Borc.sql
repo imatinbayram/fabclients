@@ -1,7 +1,5 @@
 SELECT
     cari_kod,
-    [dbo].[HP_CARI_QALIQ](cari_kod, DATEADD(DAY, -1, @tarih1)) AS Ilk_borc,
-    [dbo].[HP_CARI_QALIQ](cari_kod, @tarih2) AS Son_borc,
     ROUND(ISNULL(Alt_limit, 0), 0) Alt_limit,
     ROUND(ISNULL(ct_tutari, 0), 0) Ust_limit
 FROM CARI_HESAPLAR
