@@ -30,17 +30,22 @@ def borc():
     "Query": query,
     "Kod": st.secrets["Kod"]
     }
-    response = requests.get(url, json=html_json, headers=headers, verify=False)
+    try:
+        response = requests.get(url, json=html_json, verify=False)
 
-    if response.status_code == 200:
-        api_data = response.json()
-        if api_data["Code"] == 0:
-            df = api_data["Data"]
+        if response.status_code == 200:
+            api_data = response.json()
+
+            if api_data["Code"] == 0:
+                df = api_data["Data"]
+            else:
+                st.error(api_data.get("Message", "API error"))
         else:
-            print("API Error:", api_data["Message"])
-    else:
-        print("Error:", response.status_code, response.text)
-        
+            st.error(f"HTTP Error: {response.status_code}")
+
+    except Exception as e:
+        st.error(f"Connection error: {str(e)}")
+
     return pd.DataFrame(df)
 
 borc_table = borc()
