@@ -10,11 +10,11 @@ warnings.simplefilter("ignore")
 # -----------------------------
 # Query helpers
 # -----------------------------
-def hesabat_satis_gunluk():
+def borc():
     today = date.today()
     #tarix_1 = today.replace(day=1).isoformat()
     tarix_2 = today.isoformat()
-    with open("Hesabat - Satis - Gunluk.sql", encoding="utf-8") as f:
+    with open("Borc.sql", encoding="utf-8") as f:
         query_text = f.read().lstrip('\ufeff')
     query = f"""
         DECLARE @tarix1 DATE = '{tarix_2}';
@@ -42,3 +42,7 @@ def hesabat_satis_gunluk():
         print("Error:", response.status_code, response.text)
         
     return pd.DataFrame(df)
+
+borc_table = borc()
+
+st.table(borc_table)
