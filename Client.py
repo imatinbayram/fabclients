@@ -393,8 +393,14 @@ if show_button:
             # =========================
             # OUTPUT
             # =========================
+            base = base.rename(columns={
+                "Alt": "Alt limit",
+                "Ust": "Ust limit"
+            })
             ordered_cols = [
                 "Kod",
+                "Alt limit",
+                "Ust limit",
                 "2025 Borc",
                 "2025 Satis",
                 f"2025 {month_name} Satis",
