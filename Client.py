@@ -329,8 +329,7 @@ else:
                 kateqoriya_satis = kateqoriya(selected_kod).set_index("MikroID")
             except Exception as e:
                 st.error(f"Xəta: {e}")
-                continue    
+            
 
-        with st.spinner("Müştərilər yüklənir..."):
-            st.table(format_as_int_table(base))
-            st.table(format_as_int_table(kateqoriya_satis))
+        st.table(format_as_int_table(base))
+        st.table(format_as_int_table(kateqoriya_satis))
