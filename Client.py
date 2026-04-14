@@ -291,11 +291,10 @@ if show_button:
     row = base.iloc[0]  # əsas məlumat
 
     # 🔷 DETAIL GRID
-    d1 = st.container(border=True, width="stretch", height="content", horizontal=False, horizontal_alignment="left", vertical_alignment="top", gap="small")
+    d1 = st.expander("🗂️ Məlumat", expanded=False, key=None, icon=None, width="stretch")
     d2 = st.expander("🌐 Ünvan", expanded=False, key=None, icon=None, width="stretch")
 
     with d1:
-        st.subheader("🗂️ Məlumat", anchor=False)
 
         cols = st.columns(len(base))
         for col, (_, irow) in zip(cols, base.iterrows()):
