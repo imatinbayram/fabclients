@@ -376,11 +376,17 @@ if show_button:
             ]
 
             base = base[[c for c in ordered_cols if c in base.columns]]
-            base = base.set_index("Kod")         
+            base = base.set_index("Kod")
+        except Exception as e:
+            st.error(f"Xəta: {e}")
+            
+    st.table(format_as_int_table(base))
 
-            kateqoriya_satis = kateqoriya(selected_kod).set_index("MikroID")
+    with st.spinner("Məlumat yüklənir..."):
+        try:    
+            kateqoriya_satis = kateqoriya(selected_kod)
+            kateqoriya_satis = kateqoriya_satis.set_index("MikroID")
         except Exception as e:
             st.error(f"Xəta: {e}")
 
-    st.table(format_as_int_table(base))
     st.table(format_as_int_table(kateqoriya_satis))
