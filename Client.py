@@ -236,6 +236,31 @@ def format_as_int_table(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
+def format_numeric_align(df: pd.DataFrame):
+    numeric_cols = df.select_dtypes(include=["number"]).columns
+
+    return (
+        df.style
+        .format({col: "{:,.0f}".format for col in numeric_cols})
+        .set_properties(subset=numeric_cols, **{"text-align": "right"})
+        .set_properties(subset=[c for c in df.columns if c not in numeric_cols],
+                        **{"text-align": "left"})
+    )
+
+def add_total_row(df: pd.DataFrame, label="CƏM"):
+    df = df.copy()
+
+    numeric_cols = df.select_dtypes(include=["number"]).columns
+
+    total = df[numeric_cols].sum(numeric_only=True)
+    total_row = {col: "" for col in df.columns}
+    total_row.update(total.to_dict())
+
+    # index label row
+    df.loc[label] = total_row
+
+    return df
+
 musteriler_table = musteriler()
 
 filial_col, musteri_col, button_col = st.columns(3, vertical_alignment="bottom")
@@ -266,30 +291,36 @@ if show_button:
     row = base.iloc[0]  # əsas məlumat
 
     # 🔷 DETAIL GRID
-    d1, d2 = st.columns(2)
+    d1 = st.container(border=True, width="stretch", height="content", horizontal=False, horizontal_alignment="left", vertical_alignment="top", gap="small")
+    d2 = st.expander("🌐 Ünvan", expanded=False, key=None, icon=None, width="stretch")
 
     with d1:
         st.subheader("🗂️ Məlumat", anchor=False)
 
-        for i, irow in base.iterrows():
-            with st.expander(f"{irow['Kod']}"):
-                st.text(f"Sektor: {irow['cari_sektor_kodu']}")
-                st.text(f"RUT Günü: {int(irow['rut'])}")
+        cols = st.columns(len(base))
+        for col, (_, irow) in zip(cols, base.iterrows()):
+            with col:
+                qol_container = st.container(border=True, width="stretch", height="content", horizontal=False, horizontal_alignment="left", vertical_alignment="top", gap="small")
+                qol_container.markdown(f"""
+                <b>Kod:</b> {irow['Kod']}<br>
+                <b>Təmsilçi kodu:</b> {irow['cari_temsilci_kodu']}<br>
+                <b>Təmsilçi:</b><br>{irow['cari_per_adi']}<br>
+                <b>Qol:</b> {irow['cari_sektor_kodu']}<br>
+                <b>RUT Günü:</b> {int(irow['rut'])}
+                """, unsafe_allow_html=True)
 
     # 🔷 MAP
     with d2:
-        st.subheader("📍Ünvan", anchor=False)
-
         if row["adr_gps_enlem"] != 0 and row["adr_gps_boylam"] != 0:
             map_df = {
                 "lat": [row["adr_gps_boylam"]],
                 "lon": [row["adr_gps_enlem"]]
             }
-            st.map(map_df, zoom=12, use_container_width=True)
+            st.map(map_df, zoom=13, use_container_width=True)
         else:
             st.warning("GPS məlumatı yoxdur")
 
-
+    st.subheader("Satış Məlumatları", divider="gray", anchor=False)
     with st.spinner("Məlumat yüklənir..."):
         try:
             # =========================
@@ -379,9 +410,11 @@ if show_button:
             base = base.set_index("Kod")
         except Exception as e:
             st.error(f"Xəta: {e}")
-            
-    st.table(format_as_int_table(base))
+    
+    base = add_total_row(base, "CƏM")
+    st.table(format_numeric_align(base))
 
+    st.subheader("Kateqoriya Satışları", divider="gray", anchor=False)
     with st.spinner("Məlumat yüklənir..."):
         try:    
             kateqoriya_satis = kateqoriya(selected_kod)
@@ -389,4 +422,5 @@ if show_button:
         except Exception as e:
             st.error(f"Xəta: {e}")
 
-    st.table(format_as_int_table(kateqoriya_satis))
+    kateqoriya_satis = add_total_row(kateqoriya_satis, "CƏM")
+    st.table(format_numeric_align(kateqoriya_satis))

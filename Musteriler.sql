@@ -3,30 +3,22 @@ SELECT
     cari_unvan1 Ad, 
     cari_Ana_cari_kodu Ana,
 	crg_isim Filial,
-	crg_kod,
+--	crg_kod,
 	cari_temsilci_kodu,
-	cari_per_adi Temsilci,
-	cari_cari_kilitli_flg,
-	cari_create_date,
-	cari_banka_hesapno1,
-	MAIN.[Name] SEBEKE,
+	cari_per_adi,
+--	cari_cari_kilitli_flg,
+--	cari_create_date,
+--	cari_banka_hesapno1,
+--	MAIN.[Name] SEBEKE,
 	isnull(adr_ziyaretgunu,0) rut,
 	cari_sektor_kodu,
 	isnull(adr_gps_boylam,0) adr_gps_boylam,
 	isnull(adr_gps_enlem,0) adr_gps_enlem
-FROM 
-    MikroDB_V16_05.DBO.CARI_HESAPLAR
-LEFT JOIN
-	MikroDB_V16_05.DBO.CARI_HESAP_GRUPLARI
-	ON cari_grup_kodu = crg_kod
-LEFT JOIN
-	MikroDB_V16_05.DBO.CARI_PERSONEL_TANIMLARI
-	ON cari_temsilci_kodu = cari_per_kod
-LEFT JOIN BazarlamaHesabatDB.dbo.ContragentInfo CI WITH(NOLOCK)
-    ON cari_Ana_cari_kodu COLLATE SQL_Latin1_General_CP1_CI_AS = CI.ContragentCode
-
-LEFT JOIN BazarlamaHesabatDB.dbo.MainContragent MAIN WITH(NOLOCK)
-    ON CI.MainContragentOid = MAIN.Oid
+FROM MikroDB_V16_05.DBO.CARI_HESAPLAR
+LEFT JOIN MikroDB_V16_05.DBO.CARI_HESAP_GRUPLARI ON cari_grup_kodu = crg_kod
+LEFT JOIN MikroDB_V16_05.DBO.CARI_PERSONEL_TANIMLARI ON cari_temsilci_kodu = cari_per_kod
+--LEFT JOIN BazarlamaHesabatDB.dbo.ContragentInfo CI WITH(NOLOCK) ON cari_Ana_cari_kodu COLLATE SQL_Latin1_General_CP1_CI_AS = CI.ContragentCode
+--LEFT JOIN BazarlamaHesabatDB.dbo.MainContragent MAIN WITH(NOLOCK) ON CI.MainContragentOid = MAIN.Oid
 LEFT JOIN MikroDB_V16_05.DBO.CARI_HESAP_ADRESLERI on adr_cari_kod = cari_kod
 WHERE
 	cari_kod like '120.%'
