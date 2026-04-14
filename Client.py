@@ -19,7 +19,9 @@ st.set_page_config(
     }
 )
 
-st.header("FAB Clients", divider='rainbow')
+
+
+st.header("FAB Clients", divider='rainbow', anchor=False)
 
 months_az = {
     1: "Yanvar",
@@ -191,6 +193,28 @@ def kateqoriya(anacari):
 
     return run_query(query)
 
+def kateqoriyalar():
+    with open("Kateqoriyalar.sql", encoding="utf-8") as f:
+        query_text = f.read().lstrip('\ufeff')
+
+    query = query_text
+
+    return run_query(query)
+
+def stok_satis(tarix1 = None, tarix2 = None, anacari = None):
+    today = date.today()
+    tarix_1 = tarix1 if tarix1 else date(date.today().year - 1, 1, 1)
+    tarix_2 = tarix2 if tarix2 else today.isoformat()
+
+    query = f"""
+        DECLARE @tarix1 DATE = '{tarix_1}'
+        DECLARE @tarix2 DATE = '{tarix_2}'
+        DECLARE @anacari NVARCHAR(50) = '{anacari}'
+        SELECT * FROM [MikroDB_V16_05].[dbo].[BazarlamaSatishCariStok_MB_Cari]('2025-01-01','2026-12-31','120.R.1879')
+    """
+
+    return run_query(query)
+
 def format_as_int_table(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     #df = df.reset_index(drop=True)
@@ -214,122 +238,149 @@ def format_as_int_table(df: pd.DataFrame) -> pd.DataFrame:
 
 musteriler_table = musteriler()
 
-selected_filial = st.selectbox(
+filial_col, musteri_col, button_col = st.columns(3, vertical_alignment="bottom")
+
+selected_filial = filial_col.selectbox(
     "Filial seçin",
     options=musteriler_table["Filial"].dropna().unique()
 )
 
 filtered_df = musteriler_table[musteriler_table["Filial"] == selected_filial]
 
-if filtered_df.empty:
-    st.warning("Müştəri tapılmadı")
-else:
-    selected_musteri = st.selectbox(
-        "Müştəri seçin",
-        options=(
-            filtered_df["Ana"].astype(str) + " -- " + filtered_df["Ad"].astype(str)
+selected_musteri = musteri_col.selectbox(
+    "Müştəri seçin",
+    options=(filtered_df["Ana"].astype(str) + " -- " + filtered_df["Ad"].astype(str)
             ).dropna().unique()
-    )
+)
+
+show_button = button_col.button("Göstər", use_container_width=True)
+
+
+if show_button:
+    st.subheader(selected_filial + " -- " + selected_musteri, divider="gray", anchor=False)
+    selected_kod = selected_musteri.split(" -- ")[0]
+    selected_ad = selected_musteri.split(" -- ")[1]
     
+    base = musteriler_table[musteriler_table["Ana"] == selected_kod].copy()
 
-    if selected_musteri:
-        selected_kod = selected_musteri.split(" -- ")[0]
-        selected_ad = selected_musteri.split(" -- ")[1]
-        
-        base = musteriler_table[musteriler_table["Ana"] == selected_kod].copy()
+    row = base.iloc[0]  # əsas məlumat
 
-        with st.spinner("Məlumat yüklənir..."):
-            try:
-                # =========================
-                # BORC_CARI_AY
-                # =========================
-                borc_ay = borc_cari_ay(selected_kod)[["CariKod", "Satis", "Son_Borc", "Medaxil"]]
-                month_name = months_az[date.today().month]
-                borc_ay = borc_ay.rename(columns={"Satis": f"2026 {month_name} Satis", "Son_Borc": f"2026 {month_name} Borc", "Medaxil": f"2026 {month_name} Medaxil"})
+    # 🔷 DETAIL GRID
+    d1, d2 = st.columns(2)
 
-                base = base.merge(borc_ay, how="left", left_on="Kod", right_on="CariKod")
-                base = base.drop(columns=["CariKod"])
+    with d1:
+        st.subheader("🗂️ Məlumat", anchor=False)
 
+        for i, irow in base.iterrows():
+            with st.expander(f"{irow['Kod']}"):
+                st.text(f"Sektor: {irow['cari_sektor_kodu']}")
+                st.text(f"RUT Günü: {int(irow['rut'])}")
 
-                # =========================
-                # BORC_CARI_AY_2025
-                # =========================
-                borc_2025_ay = borc_cari_ay_2025(selected_kod)[["CariKod", "Satis"]]
-                borc_2025_ay = borc_2025_ay.rename(columns={"Satis": f"2025 {month_name} Satis"})
+    # 🔷 MAP
+    with d2:
+        st.subheader("📍Ünvan", anchor=False)
 
-                base = base.merge(borc_2025_ay, how="left", left_on="Kod", right_on="CariKod")
-                base = base.drop(columns=["CariKod"])
-
-
-                # =========================
-                # BORC_2025
-                # =========================
-                borc_2025_df = borc_2025(selected_kod)[["CariKod", "Satis", "Son_Borc"]]
-
-                borc_2025_df = borc_2025_df.rename(columns={
-                    "Satis": "2025 Satis",
-                    "Son_Borc": "2025 Borc"
-                })
-
-                base = base.merge(borc_2025_df, how="left", left_on="Kod", right_on="CariKod")
-                base = base.drop(columns=["CariKod"])
+        if row["adr_gps_enlem"] != 0 and row["adr_gps_boylam"] != 0:
+            map_df = {
+                "lat": [row["adr_gps_boylam"]],
+                "lon": [row["adr_gps_enlem"]]
+            }
+            st.map(map_df, zoom=12, use_container_width=True)
+        else:
+            st.warning("GPS məlumatı yoxdur")
 
 
-                # =========================
-                # BORC_2026
-                # =========================
-                borc_2026_df = borc_2026(selected_kod)[["CariKod", "Satis"]]
-                month = date.today().month
+    with st.spinner("Məlumat yüklənir..."):
+        try:
+            # =========================
+            # BORC_CARI_AY
+            # =========================
+            borc_ay = borc_cari_ay(selected_kod)[["CariKod", "Satis", "Son_Borc", "Medaxil"]]
+            month_name = months_az[date.today().month]
+            borc_ay = borc_ay.rename(columns={"Satis": f"2026 {month_name} Satis", "Son_Borc": f"2026 {month_name} Borc", "Medaxil": f"2026 {month_name} Medaxil"})
 
-                prev_month = 12 if month == 1 else month - 1
-                borc_2026_df = borc_2026_df.rename(columns={"Satis": f"2026 {prev_month} ay Satis"})
-
-                base = base.merge(borc_2026_df, how="left", left_on="Kod", right_on="CariKod")
-                base = base.drop(columns=["CariKod"])
-
-
-                # =========================
-                # QIRMIZI
-                # =========================
-                qirmizi_df = qirmizi(selected_kod)
-
-                if qirmizi_df is None or qirmizi_df.empty:
-                    base["Qirmizi"] = 0
-                else:
-                    qirmizi_df = qirmizi_df.rename(columns={"Q_Kod": "CariKod"})
-
-                    base = base.merge(
-                        qirmizi_df[["CariKod", "Qirmizi"]],
-                        how="left",
-                        left_on="Kod",
-                        right_on="CariKod"
-                    ).drop(columns=["CariKod"])
-
-                    base["Qirmizi"] = base["Qirmizi"].fillna(0)
+            base = base.merge(borc_ay, how="left", left_on="Kod", right_on="CariKod")
+            base = base.drop(columns=["CariKod"])
 
 
-                # =========================
-                # OUTPUT
-                # =========================
-                ordered_cols = [
-                    "Kod",
-                    "2025 Borc",
-                    "2025 Satis",
-                    f"2025 {month_name} Satis",
-                    f"2026 {prev_month} ay Satis",
-                    f"2026 {month_name} Satis",
-                    f"2026 {month_name} Medaxil",
-                    f"2026 {month_name} Borc",
-                    "Qirmizi"
-                ]
+            # =========================
+            # BORC_CARI_AY_2025
+            # =========================
+            borc_2025_ay = borc_cari_ay_2025(selected_kod)[["CariKod", "Satis"]]
+            borc_2025_ay = borc_2025_ay.rename(columns={"Satis": f"2025 {month_name} Satis"})
 
-                base = base[[c for c in ordered_cols if c in base.columns]]
-                base = base.set_index("Kod")         
+            base = base.merge(borc_2025_ay, how="left", left_on="Kod", right_on="CariKod")
+            base = base.drop(columns=["CariKod"])
 
-                kateqoriya_satis = kateqoriya(selected_kod).set_index("MikroID")
-            except Exception as e:
-                st.error(f"Xəta: {e}")
-            
 
-        st.table(format_as_int_table(base))
-        st.table(format_as_int_table(kateqoriya_satis))
+            # =========================
+            # BORC_2025
+            # =========================
+            borc_2025_df = borc_2025(selected_kod)[["CariKod", "Satis", "Son_Borc"]]
+
+            borc_2025_df = borc_2025_df.rename(columns={
+                "Satis": "2025 Satis",
+                "Son_Borc": "2025 Borc"
+            })
+
+            base = base.merge(borc_2025_df, how="left", left_on="Kod", right_on="CariKod")
+            base = base.drop(columns=["CariKod"])
+
+
+            # =========================
+            # BORC_2026
+            # =========================
+            borc_2026_df = borc_2026(selected_kod)[["CariKod", "Satis"]]
+            month = date.today().month
+
+            prev_month = 12 if month == 1 else month - 1
+            borc_2026_df = borc_2026_df.rename(columns={"Satis": f"2026 {prev_month} ay Satis"})
+
+            base = base.merge(borc_2026_df, how="left", left_on="Kod", right_on="CariKod")
+            base = base.drop(columns=["CariKod"])
+
+
+            # =========================
+            # QIRMIZI
+            # =========================
+            qirmizi_df = qirmizi(selected_kod)
+
+            if qirmizi_df is None or qirmizi_df.empty:
+                base["Qirmizi"] = 0
+            else:
+                qirmizi_df = qirmizi_df.rename(columns={"Q_Kod": "CariKod"})
+
+                base = base.merge(
+                    qirmizi_df[["CariKod", "Qirmizi"]],
+                    how="left",
+                    left_on="Kod",
+                    right_on="CariKod"
+                ).drop(columns=["CariKod"])
+
+                base["Qirmizi"] = base["Qirmizi"].fillna(0)
+
+
+            # =========================
+            # OUTPUT
+            # =========================
+            ordered_cols = [
+                "Kod",
+                "2025 Borc",
+                "2025 Satis",
+                f"2025 {month_name} Satis",
+                f"2026 {prev_month} ay Satis",
+                f"2026 {month_name} Satis",
+                f"2026 {month_name} Medaxil",
+                f"2026 {month_name} Borc",
+                "Qirmizi"
+            ]
+
+            base = base[[c for c in ordered_cols if c in base.columns]]
+            base = base.set_index("Kod")         
+
+            kateqoriya_satis = kateqoriya(selected_kod).set_index("MikroID")
+        except Exception as e:
+            st.error(f"Xəta: {e}")
+
+    st.table(format_as_int_table(base))
+    st.table(format_as_int_table(kateqoriya_satis))
