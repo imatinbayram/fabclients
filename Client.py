@@ -19,6 +19,32 @@ st.set_page_config(
     }
 )
 
+bazarlama_login = {
+'Bazarlama' : f'fab{date.today().month:02d}'
+}
+
+if 'logged_in' not in st.session_state:
+    st.session_state['logged_in'] = False
+
+def login_screen():
+    with st.form(key='login_form'):
+        username_region = st.selectbox('İstifadəçi', sorted(bazarlama_login.keys()), label_visibility='visible', disabled=True)
+        password = st.text_input('Şifrə', type="password")
+        submit_button = st.form_submit_button('Daxil ol', use_container_width=True)
+        
+        if submit_button:
+            if username_region in bazarlama_login.keys() and password == bazarlama_login[username_region]:
+                st.session_state['logged_in'] = True
+                st.session_state['login_region'] = username_region
+                st.success("Giriş edilir...")
+                st.rerun()
+            else:
+                st.error("Şifrə düzgün deyil!")           
+
+if not st.session_state['logged_in']:
+    login_screen()
+    st.stop()
+
 
 st.header("FAB Clients", divider='rainbow', anchor=False)
 
