@@ -358,11 +358,11 @@ if show_button:
             # =========================
             # BORC_2026
             # =========================
-            borc_2026_df = borc_2026_kecen_ay(selected_kod)[["CariKod", "Satis"]]
+            borc_2026_df = borc_2026_kecen_ay(selected_kod)[["CariKod", "Satis", "Medaxil"]]
             month = date.today().month
 
             prev_month = 12 if month == 1 else month - 1
-            borc_2026_df = borc_2026_df.rename(columns={"Satis": f"2026 {prev_month} ay Satış"})
+            borc_2026_df = borc_2026_df.rename(columns={"Satis": f"2026 {prev_month} ay Satış", "Medaxil": f"2026 {prev_month} ay Ödəniş"})
 
             base = base.merge(borc_2026_df, how="left", left_on="Kod", right_on="CariKod")
             base = base.drop(columns=["CariKod"])
@@ -404,6 +404,7 @@ if show_button:
                 "2025 Satış",
                 f"2025 {month_name} Satış",
                 f"2026 {prev_month} ay Satış",
+                f"2026 {prev_month} ay Ödəniş",
                 f"2026 {month_name} Satış",
                 f"2026 {month_name} Ödəniş",
                 f"{cari_ay_bugun} Borc",
