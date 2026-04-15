@@ -29,4 +29,4 @@ WHERE
 	and cari_grup_kodu IN ('210','220','230','240','250','520','521','523','540','542','554','555','575')
 	and cari_temsilci_kodu IS NOT NULL
 	and cari_temsilci_kodu NOT IN ('150','160','2000', '1020')
-ORDER BY cari_grup_kodu,cari_unvan1,cari_kod DESC
+ORDER BY cari_grup_kodu,cari_unvan1,cari_sektor_kodu
